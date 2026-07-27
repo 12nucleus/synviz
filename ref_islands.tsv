@@ -1,0 +1,10 @@
+# Genomic island definitions — JP-H-1 reference plasmid (rep-oriented coordinates)
+# Format: start  end  label  color
+# Use with: --islands ref_islands.tsv
+0	10000	Rep / IS110 / espK	#377EB8
+35000	50000	RecB / DNA mod / IS607	#A6761D
+60000	65000	dnaB / ParB	#377EB8
+70000	89000	T7SS / ESX-1 cluster	#984EA3
+90000	100000	TA systems	#FFD700
+169000	177000	Conjugation cluster	#E41A1C
+187000	190000	espK / IS110	#4DAF4A

@@ -1,0 +1,11 @@
+# Genomic island definitions — IDR2500080001-01-01 query plasmid (rep-oriented coordinates)
+# Format: start  end  label  color
+# Use with: --islands qry_islands.tsv
+0	5000	Rep	#377EB8
+21000	24000	IS21 (istAB)	#4DAF4A
+60000	65000	MmpL13 / Antiporter — unique to query	#FF7F00
+77000	83000	dnaB / ParB / Int	#377EB8
+91000	110000	T7SS / ESX-1 cluster	#984EA3
+110000	116000	TA systems	#FFD700
+161000	172000	Conjugation cluster	#E41A1C
+182000	187000	IS21 (istAB)	#4DAF4A
