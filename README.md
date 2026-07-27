@@ -1,6 +1,6 @@
-# Plasmid Synteny Plot Pipeline
+# synviz — Synteny visualization for any DNA sequences
 
-A command-line pipeline for comparing two plasmid genomes, generating:
+A command-line pipeline for comparing two DNA sequences, generating:
 - A **dual-axis synteny map** with ORF tracks, genomic island bands, key gene highlights, and curved light-blue ribbons connecting conserved (>90% identity) blocks
 - A **standalone ribbon plot** showing syntenic connections between the two genomes
 - A **per-window %identity plot** (500 bp sliding blastn windows)
