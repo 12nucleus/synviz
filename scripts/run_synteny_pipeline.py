@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 =============================================================================
-  Plasmid Synteny Plot Generation Pipeline — Master Orchestrator
+  Synteny Plot Generation Pipeline — Master Orchestrator
 =============================================================================
-Runs the complete comparison workflow between two plasmids in the correct
+Runs the complete comparison workflow between two sequences in the correct
 order:
 
   Step 1 — blastn identity windows   (500 bp sliding window %identity)
@@ -14,12 +14,12 @@ order:
 If a --suffix is provided (e.g. "cmp1"), ALL output files are tagged so
 previous plots are preserved:
 
-  plasmid_blastn_identity_windows_cmp1.tsv     plasmid_identity_plot_cmp1.svg
-  plasmid_high_identity_regions_cmp1.tsv
-  plasmid_comparison_map_cmp1.svg              plasmid_ribbon_synteny_cmp1.svg
+  blastn_identity_windows_cmp1.tsv     identity_plot_cmp1.svg
+  high_identity_regions_cmp1.tsv
+  comparison_map_cmp1.svg              ribbon_synteny_cmp1.svg
 
 Usage:
-  # Default run (JP-H-1 ref vs IDR2500080001 query)
+  # Default run
   conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py
 
   # With a named comparison (preserves previous outputs)
@@ -54,10 +54,10 @@ from pathlib import Path
 BASE    = Path(__file__).resolve().parent.parent
 SCRIPTS = Path(__file__).resolve().parent
 
-DEFAULT_REF_FASTA = BASE / "ref_annotation/JP-H-1_plasmid.fasta"
-DEFAULT_REF_GFF   = BASE / "ref_annotation/JP-H-1_plasmid.gff3"
-DEFAULT_QRY_FASTA = BASE / "Final_annotation/IDR2500080001-01-01_plasmid.fasta"
-DEFAULT_QRY_GFF   = BASE / "Final_annotation/IDR2500080001-01-01_plasmid.gff3"
+DEFAULT_REF_FASTA = BASE / "test_files/ref.fasta"
+DEFAULT_REF_GFF   = BASE / "test_files/ref.gff3"
+DEFAULT_QRY_FASTA = BASE / "test_files/qry.fasta"
+DEFAULT_QRY_GFF   = BASE / "test_files/qry.gff3"
 
 BLASTN      = "/Users/Pascal/anaconda3/envs/TB/bin/blastn"
 MAKEBLASTDB = "/Users/Pascal/anaconda3/envs/TB/bin/makeblastdb"
@@ -72,8 +72,8 @@ STEPS = [
         "name":    "blastn (identity windows)",
         "script":  SCRIPTS / "blastn_identity_windows.py",
         "outputs": lambda sfx: [
-            BASE / f"plasmid_blastn_identity_windows{sfx}.tsv",
-            BASE / f"plasmid_identity_plot{sfx}.svg",
+            BASE / f"blastn_identity_windows{sfx}.tsv",
+            BASE / f"identity_plot{sfx}.svg",
         ],
         "desc":    "500 bp sliding-window blastn %identity vs reference",
         "slow":    True,
@@ -82,15 +82,15 @@ STEPS = [
         "key":     "regions",
         "name":    "high-identity regions",
         "script":  SCRIPTS / "high_identity_regions.py",
-        "outputs": lambda sfx: [BASE / f"plasmid_high_identity_regions{sfx}.tsv"],
+        "outputs": lambda sfx: [BASE / f"high_identity_regions{sfx}.tsv"],
         "depends": "blastn",
         "desc":    "merge windows into >90% conserved blocks",
     },
     {
         "key":     "map",
         "name":    "comparison map + ribbons",
-        "script":  SCRIPTS / "plasmid_comparison_map.py",
-        "outputs": lambda sfx: [BASE / f"plasmid_comparison_map{sfx}.svg"],
+        "script":  SCRIPTS / "comparison_map.py",
+        "outputs": lambda sfx: [BASE / f"comparison_map{sfx}.svg"],
         "depends": "regions",
         "desc":    "dual-axis ORF synteny map with light-blue curved ribbon overlay",
     },
@@ -98,7 +98,7 @@ STEPS = [
         "key":     "ribbon",
         "name":    "standalone ribbon plot",
         "script":  SCRIPTS / "ribbon_synteny_plot.py",
-        "outputs": lambda sfx: [BASE / f"plasmid_ribbon_synteny{sfx}.svg"],
+        "outputs": lambda sfx: [BASE / f"ribbon_synteny{sfx}.svg"],
         "depends": "regions",
         "desc":    "clean light-blue curved-ribbon synteny diagram",
     },
@@ -134,14 +134,15 @@ def _output_status(outputs):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Plasmid synteny plot generation pipeline",
+        description="Synteny plot generation pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s --run \\
       --ref-fasta ref.fasta --ref-gff ref.gff3 \\
       --qry-fasta qry.fasta --qry-gff qry.gff3 \\
-      --islands islands.tsv --suffix my_comparison
+      --islands-ref ref_islands.tsv --islands-qry qry_islands.tsv \\
+      --suffix my_comparison
 
   %(prog)s --run --ref-fasta R.fa --qry-fasta Q.fa --suffix fasta_only
 
@@ -165,8 +166,10 @@ Examples:
     out = parser.add_argument_group("Output")
     out.add_argument("--suffix", "-s", type=str, default="",
                      help="Tag appended to all output filenames (e.g. 'cmp1' → _cmp1)")
-    out.add_argument("--islands", type=str, default="auto",
-                     help="Genomic island mode: 'auto' (from GFF), 'none', or path to a TSV file")
+    out.add_argument("--islands-ref", type=str, default="auto",
+                     help="Reference island bands: 'auto' (from GFF), 'none', or path to a TSV file")
+    out.add_argument("--islands-qry", type=str, default="auto",
+                     help="Query island bands: 'auto' (from GFF), 'none', or path to a TSV file")
 
     # ── Step selection ───────────────────────────────────────────────────
     ctl = parser.add_argument_group("Step control")
@@ -226,7 +229,7 @@ Examples:
 
     # ── Print plan ───────────────────────────────────────────────────────
     print()
-    _hr("PLASMID SYNTENY PLOT PIPELINE")
+    _hr("SYNTENY PLOT PIPELINE")
     print(f"\n  Project  : {BASE.name}")
     print(f"  Python   : {PYTHON}")
     print(f"  Ref      : {ref_fasta}")
@@ -295,8 +298,9 @@ Examples:
     child_env["SYNTENY_REF_GFF"]   = str(ref_gff)
     child_env["SYNTENY_QRY_FASTA"] = str(qry_fasta)
     child_env["SYNTENY_QRY_GFF"]   = str(qry_gff)
-    child_env["SYNTENY_SUFFIX"]    = suffix.lstrip("_") if suffix else ""
-    child_env["SYNTENY_ISLANDS"]   = args.islands
+    child_env["SYNTENY_SUFFIX"]        = suffix.lstrip("_") if suffix else ""
+    child_env["SYNTENY_ISLANDS_REF"]   = args.islands_ref
+    child_env["SYNTENY_ISLANDS_QRY"]   = args.islands_qry
 
     # ── Execute ──────────────────────────────────────────────────────────
     total = len(actual_run)

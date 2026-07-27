@@ -2,11 +2,10 @@
 """
 Identify contiguous regions where the per-window blastn % identity is > 90%,
 and report each region's start-end in BOTH genomes:
-  - query coordinates (IDR2500080001, rep-oriented)
-  - reference coordinates, original (AP020327.1) and rep-oriented
+  - query coordinates (rep-oriented)
+  - reference coordinates, original and rep-oriented
 
-Reads plasmid_blastn_identity_windows.tsv and writes
-plasmid_high_identity_regions.tsv.
+Reads blastn_identity_windows.tsv and writes high_identity_regions.tsv.
 
 Usage:
     conda run -n TB_plasmid python3 scripts/high_identity_regions.py
@@ -16,10 +15,11 @@ import csv
 from pathlib import Path
 
 import _pipeline_paths as _pp
-BASE   = _pp.BASE
-TSV    = _pp.out_path("plasmid_blastn_identity_windows", ".tsv")
-OUT    = _pp.out_path("plasmid_high_identity_regions", ".tsv")
-THRESH = 90.0
+BASE    = _pp.BASE
+QRY_LEN = _pp.QRY_LEN
+TSV     = _pp.out_path("blastn_identity_windows", ".tsv")
+OUT     = _pp.out_path("high_identity_regions", ".tsv")
+THRESH  = 90.0
 
 rows = []
 with open(TSV) as f:
@@ -65,8 +65,9 @@ with open(OUT, 'w') as f:
 
 print(f"Found {len(regions)} contiguous region(s) with per-window identity > {THRESH}%")
 total_q = sum(r[1] - r[0] for r in regions)
+qry_total = QRY_LEN or 1
 print(f"Total query span covered: {total_q:,} bp "
-      f"({100*total_q/193713:.1f}% of query)\n")
+      f"({100*total_q/qry_total:.1f}% of query)\n")
 print(f"{'region':>6}  {'query':>16}  {'ref_orig':>18}  {'ref_rep':>18}  {'mean':>7}  {'win':>4}")
 for idx, (qs, qe, ros, roe, rrs, rre, mp, nw, w) in enumerate(regions, 1):
     wrapnote = "  [WRAPS rep cut]" if w else ""

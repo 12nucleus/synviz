@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Curved-ribbon synteny plot between JP-H-1 (reference) and IDR2500080001 (query).
+"""Curved-ribbon synteny plot between reference and query genomes.
 
-Draws two horizontal genome bars (reference on top in original orientation,
-query on bottom in rep-oriented coordinates) and connects each conserved
-(>90% identity) block with a smooth cubic-Bezier ribbon. Blocks are kept
-separate so the synteny structure is visible.
+Draws two horizontal genome bars (reference on top, query on bottom) and
+connects each conserved (>90% identity) block with a smooth cubic-Bezier
+ribbon. Blocks are kept separate so the synteny structure is visible.
 """
 
 import csv
@@ -21,11 +20,11 @@ import numpy as np
 # ----------------------------------------------------------------------------
 import _pipeline_paths as _pp
 
-REGIONS_TSV = str(_pp.out_path("plasmid_high_identity_regions", ".tsv"))
-OUT_SVG     = str(_pp.out_path("plasmid_ribbon_synteny", ".svg"))
+REGIONS_TSV = str(_pp.out_path("high_identity_regions", ".tsv"))
+OUT_SVG     = str(_pp.out_path("ribbon_synteny", ".svg"))
 
-REF_LEN = 191151   # JP-H-1, original orientation (AP020327.1)
-QRY_LEN = 193713   # IDR2500080001, rep-oriented
+REF_LEN = _pp.REF_LEN   # reference, original orientation
+QRY_LEN = _pp.QRY_LEN   # query, rep-oriented
 
 # Vertical layout of the two genome bars
 Y_TOP_C = 1.0      # centre of reference bar
@@ -110,7 +109,7 @@ def main():
     q_ticks = list(range(0, int(QRY_LEN) + 1, 20000))
     ax.set_xticks(q_ticks)
     ax.set_xticklabels([fmt_kb(t) for t in q_ticks], fontsize=9)
-    ax.set_xlabel("Query  (IDR2500080001, rep-oriented)  position", fontsize=12)
+    ax.set_xlabel("Query (rep-oriented) position", fontsize=12)
 
     # top x-axis = reference (twiny)
     ax2 = ax.twiny()
@@ -118,18 +117,18 @@ def main():
     r_ticks = list(range(0, int(REF_LEN) + 1, 20000))
     ax2.set_xticks(r_ticks)
     ax2.set_xticklabels([fmt_kb(t) for t in r_ticks], fontsize=9)
-    ax2.set_xlabel("Reference  (JP-H-1, original orientation)  position", fontsize=12)
+    ax2.set_xlabel("Reference (original orientation) position", fontsize=12)
     ax2.xaxis.set_ticks_position("top")
     ax2.xaxis.set_label_position("top")
 
     # bar labels
-    ax.text(REF_LEN / 2, Y_TOP_C + BAR_H + 0.12, "JP-H-1 reference (orig. orient.)",
+    ax.text(REF_LEN / 2, Y_TOP_C + BAR_H + 0.12, "Reference (orig. orient.)",
             ha="center", va="bottom", fontsize=12, fontweight="bold")
-    ax.text(QRY_LEN / 2, Y_BOT_C - BAR_H - 0.12, "IDR2500080001 query (rep-oriented)",
+    ax.text(QRY_LEN / 2, Y_BOT_C - BAR_H - 0.12, "Query (rep-oriented)",
             ha="center", va="top", fontsize=12, fontweight="bold")
 
     # colour bar removed — ribbons are uniformly light blue
-    ax.set_title("Curved-ribbon synteny: JP-H-1 reference  ↔  IDR2500080001 query\n"
+    ax.set_title("Curved-ribbon synteny: reference  ↔  query\n"
                  f"{len(regions)} conserved (>90%) blocks, total "
                  f"{sum(int(r['query_end'])-int(r['query_start']) for r in regions):,} bp",
                  fontsize=14, fontweight="bold")

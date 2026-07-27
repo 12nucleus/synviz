@@ -1,4 +1,4 @@
-# Genomic island definitions — JP-H-1 reference plasmid (rep-oriented coordinates)
+# Genomic island definitions — reference (rep-oriented coordinates)
 # Format: start  end  label  color
 # Use with: --islands ref_islands.tsv
 0	10000	Rep / IS110 / espK	#377EB8

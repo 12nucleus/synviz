@@ -1,4 +1,4 @@
-# Genomic island definitions — IDR2500080001-01-01 query plasmid (rep-oriented coordinates)
+# Genomic island definitions — query (rep-oriented coordinates)
 # Format: start  end  label  color
 # Use with: --islands qry_islands.tsv
 0	5000	Rep	#377EB8

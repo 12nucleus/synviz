@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
-Per-window percent nucleotide identity between the two plasmids, computed with
-blastn over a 500 bp sliding window (250 bp step) on the QUERY (IDR2500080001).
+Per-window percent nucleotide identity between two sequences, computed with
+blastn over a 500 bp sliding window (250 bp step) on the QUERY.
 
-For each window the best blastn HSP vs the reference (JP-H-1, in its native
-original AP020327.1 orientation, which keeps the query->ref mapping collinear)
-is recorded. The result table stores BOTH the query position and the reference
-position of the match (original + rep-oriented), plus the % identity.
+For each window the best blastn HSP vs the reference (in its native original
+orientation) is recorded. The result table stores BOTH the query position and
+the reference position of the match (original + rep-oriented), plus the %
+identity.
 
 Outputs:
-  - plasmid_blastn_identity_windows.tsv   (per-window table: query + ref positions, %id)
-  - plasmid_identity_plot.svg             (% identity vs query position, continuous)
+  - blastn_identity_windows.tsv   (per-window table: query + ref positions, %id)
+  - identity_plot.svg             (% identity vs query position, continuous)
 
 Usage:
     conda run -n TB_plasmid python3 scripts/blastn_identity_windows.py
 """
 
-import subprocess, tempfile, os, shutil
+import subprocess, tempfile, os, shutil, sys
 from pathlib import Path
 import numpy as np
 import matplotlib
@@ -28,16 +28,14 @@ import _pipeline_paths as _pp
 BASE      = _pp.BASE
 REF_FASTA = _pp.REF_FASTA
 QRY_FASTA = _pp.QRY_FASTA
-OUT_TSV   = _pp.out_path("plasmid_blastn_identity_windows", ".tsv")
-OUT_SVG   = _pp.out_path("plasmid_identity_plot", ".svg")
+OUT_TSV   = _pp.out_path("blastn_identity_windows", ".tsv")
+OUT_SVG   = _pp.out_path("identity_plot", ".svg")
 
 BLASTN      = "/Users/Pascal/anaconda3/envs/TB/bin/blastn"
 MAKEBLASTDB = "/Users/Pascal/anaconda3/envs/TB/bin/makeblastdb"
 
-WINDOW  = 500
-STEP    = 250
-REF_CUT = 177304   # 1-based rep-protein start; rotate original -> rep-oriented
-REF_LEN = 191151
+WINDOW = 500
+STEP   = 250
 
 # ── FASTA I/O ──────────────────────────────────────────
 def read_fasta(path):
@@ -72,20 +70,14 @@ def main():
     print(f"  query : {QRY_LEN} bp (rep-oriented)")
     print(f"  ref   : {len(rseq)} bp (original orientation)")
 
-    # Ref is used in its native (original AP020327.1) orientation for the blast,
-    # which keeps the query->ref mapping collinear. A rep-oriented column is
-    # added to the table so positions can be compared with the comparison map.
-    def to_rep_oriented(pos):
-        # original 1-based -> rep-oriented 1-based (cut at REF_CUT)
-        if pos >= REF_CUT:
-            return pos - REF_CUT + 1
-        return pos + (REF_LEN - REF_CUT + 1)
-
+    # Ref is used in its native (original) orientation for the blast, which
+    # keeps the query->ref mapping collinear. The output table records the ref
+    # coordinates directly so positions can be compared with the comparison map.
     tmp = tempfile.mkdtemp(prefix="blastn_win_")
     try:
         # Reference DB (rotated, rep-oriented)
         ref_db_fasta = os.path.join(tmp, "ref_orig.fasta")
-        write_fasta(ref_db_fasta, ">JP-H-1", rseq)
+        write_fasta(ref_db_fasta, ">reference", rseq)
         subprocess.run([MAKEBLASTDB, "-in", ref_db_fasta, "-dbtype", "nucl",
                         "-out", os.path.join(tmp, "refdb")],
                        check=True, capture_output=True, text=True)
@@ -128,11 +120,10 @@ def main():
             check=True, capture_output=True, text=True)
         lines = [l for l in res.stdout.strip().split('\n') if l]
 
-        # Parse: keep the best HSP (by BITSCORE) for each window. Bitscore balances
-        # identity and alignment length, so a short 100% micro-match loses to the
-        # longer true ortholog. PIDENT_MIN = 0, so EVERY hit is reported with its
+        # Parse: keep the best HSP (by BITSCORE) for each window. Bitscore
+        # balances identity and alignment length, so a short 100% micro-match
+        # loses to the longer true ortholog. Every hit is reported with its
         # ref coordinates.
-        PIDENT_MIN = 0.0
         print("[3/5] Parsing blastn output...")
         best = {}        # best HSP per window (by bitscore)
         for l in lines:
@@ -189,7 +180,7 @@ def main():
         ax.axhline(85, color='#999999', ls=':', lw=0.5, alpha=0.4)
         ax.set_ylim(60, 100.5)
         ax.set_xlim(0, QRY_LEN / 1000.0)
-        ax.set_xlabel("Position on query (IDR2500080001) — kb", fontsize=10)
+        ax.set_xlabel("Position on query — kb", fontsize=10)
         ax.set_ylabel("% Identity (blastn)", fontsize=10)
         ax.set_title("Per-window % nucleotide identity  (500 bp window, 250 bp step, blastn)",
                      fontsize=12, fontweight='bold')
