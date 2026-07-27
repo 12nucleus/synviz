@@ -56,6 +56,7 @@ python scripts/run_synteny_pipeline.py --run \
 ```
 
 Without `--run`, the script prints help and exits — it never runs by default.
+Use '--islands-qry auto' to automatically identify common genomic islands from the annotation file
 
 ---
 
