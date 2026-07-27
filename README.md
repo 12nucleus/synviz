@@ -6,7 +6,9 @@ A command-line pipeline for comparing two DNA sequences, generating:
 - A **per-window %identity plot** (500 bp sliding blastn windows)
 - **Tabular data** with per-window blastn results and merged high-identity regions
 
-![Example output](comparison_map.svg)
+![Example output](comparison_map_test.svg)
+
+![Example output](identity_plot_test.svg)
 
 ---
 
