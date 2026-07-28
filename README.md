@@ -1,10 +1,10 @@
 # synviz — Synteny visualization for any DNA sequences
 
 A command-line pipeline for comparing two DNA sequences, generating:
-- A **dual-axis synteny map** with ORF tracks, genomic island bands, key gene highlights, and curved light-blue ribbons connecting conserved (>90% identity) blocks
+- A **dual-axis synteny map** with ORF tracks, genomic island bands, key gene highlights, and curved light-blue ribbons connecting conserved blocks
 - A **standalone ribbon plot** showing syntenic connections between the two genomes
 - A **per-window %identity plot** (500 bp sliding blastn windows)
-- **Tabular data** with per-window blastn results and merged high-identity regions
+- **Tabular data** with per-window blastn results and merged conserved regions
 
 ![Example output](comparison_map_test.svg)
 
@@ -167,6 +167,19 @@ python scripts/run_synteny_pipeline.py --run \
 
 If the colour column is omitted, it is auto-assigned from the label text.
 
+### Identity threshold
+
+The conserved-block detection default is **90% identity**. You can override it:
+
+```bash
+python scripts/run_synteny_pipeline.py --run \
+    --ref-fasta ref.fasta --qry-fasta qry.fasta \
+    --identity-threshold 85 \
+    --suffix thr85
+```
+
+The threshold applies to all downstream steps: the regions TSV, the ribbon labels, and the comparison-map legend.
+
 ### Step control
 
 | Flag | Effect |
@@ -175,6 +188,7 @@ If the colour column is omitted, it is auto-assigned from the label text.
 | `--only map` | Regenerate only the comparison map (auto-resolves dependencies) |
 | `--force` | Re-run steps even if outputs already exist |
 | `--dry-run` | Preview what would run without executing |
+| `--identity-threshold <float>` | % identity for conserved blocks (default: 90.0) |
 
 ---
 
@@ -200,7 +214,7 @@ The pipeline runs four steps in dependency order:
 ### Step 2 — high-identity regions
 
 - Reads the per-window TSV
-- Merges consecutive windows with >90% identity into contiguous blocks
+- Merges consecutive windows with identity above the threshold (default: >90%) into contiguous blocks
 - Reports each block's coordinates in both genomes
 - Output: TSV of conserved blocks (number and total span depend on the inputs)
 
@@ -227,7 +241,7 @@ The pipeline runs four steps in dependency order:
 |------|--------|-------------|
 | `blastn_identity_windows*.tsv` | TSV | Per-window blastn results: query pos, ref pos, %id, strand, bitscore |
 | `identity_plot*.svg` | SVG | %identity vs query position (continuous line, 60–100% y-axis) |
-| `high_identity_regions*.tsv` | TSV | Merged >90% conserved blocks with coordinates in both genomes |
+| `high_identity_regions*.tsv` | TSV | Merged conserved blocks (threshold default: >90% identity) with coordinates in both genomes |
 | `comparison_map*.svg` | SVG | Dual-axis synteny map with ORFs, islands, key genes, and curved ribbons |
 | `ribbon_synteny*.svg` | SVG | Standalone light-blue curved-ribbon synteny diagram |
 
@@ -271,13 +285,11 @@ For advanced / scripted use, the following environment variables override defaul
 | `SYNTENY_QRY_FASTA` | Query FASTA path | `test_files/qry.fasta` |
 | `SYNTENY_QRY_GFF` | Query GFF path | `test_files/qry.gff3` |
 | `SYNTENY_SUFFIX` | Output filename suffix | (none) |
-<<<<<<< HEAD
-| `SYNTENY_ISLANDS` | Island mode: `auto`, `none`, or file path | `auto` |
-=======
 | `SYNTENY_ISLANDS_REF` | Reference island bands: `auto`, `none`, or TSV path | `auto` |
 | `SYNTENY_ISLANDS_QRY` | Query island bands: `auto`, `none`, or TSV path | `auto` |
 | `SYNTENY_REF_ALN_START` / `SYNTENY_REF_ALN_END` | Optional 1:1 aligned-block reference coords (for the comparison-map connector) | (unset — connector skipped) |
 | `SYNTENY_QRY_ALN_START` / `SYNTENY_QRY_ALN_END` | Optional 1:1 aligned-block query coords | (unset — connector skipped) |
+| `SYNTENY_IDENTITY_THRESHOLD` | % identity threshold for conserved-block detection | `90.0` |
 
 ---
 
@@ -310,4 +322,3 @@ The `categorise()` function in `comparison_map.py` assigns each CDS a functional
 | Stress / DNA repair / ROS | ![#1F78B4](https://placehold.co/12x12/1F78B4/1F78B4) teal | dna repair, heat shock, sod, catalase |
 | Hypothetical | ![#D9D9D9](https://placehold.co/12x12/D9D9D9/D9D9D9) grey | hypothetical protein |
 | Other | ![#B3B3B3](https://placehold.co/12x12/B3B3B3/B3B3B3) dark grey | (catch‑all) |
->>>>>>> 802d5ba (Visual fixes applied)

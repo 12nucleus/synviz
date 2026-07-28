@@ -7,7 +7,7 @@ Runs the complete comparison workflow between two sequences in the correct
 order:
 
   Step 1 — blastn identity windows   (500 bp sliding window %identity)
-  Step 2 — high-identity regions     (merge windows into >90% conserved blocks)
+  Step 2 — high-identity regions     (merge windows into conserved blocks above threshold)
   Step 3 — comparison map            (dual-axis ORF map + curved light-blue ribbons)
   Step 4 — standalone ribbon plot    (light-blue curved ribbons only)
 
@@ -53,6 +53,7 @@ from pathlib import Path
 # ── Defaults (used when CLI args are not provided) ──────────────────────────
 BASE    = Path(__file__).resolve().parent.parent
 SCRIPTS = Path(__file__).resolve().parent
+OUT_DIR = Path.cwd()
 
 DEFAULT_REF_FASTA = BASE / "test_files/ref.fasta"
 DEFAULT_REF_GFF   = BASE / "test_files/ref.gff3"
@@ -72,8 +73,8 @@ STEPS = [
         "name":    "blastn (identity windows)",
         "script":  SCRIPTS / "blastn_identity_windows.py",
         "outputs": lambda sfx: [
-            BASE / f"blastn_identity_windows{sfx}.tsv",
-            BASE / f"identity_plot{sfx}.svg",
+            OUT_DIR / f"blastn_identity_windows{sfx}.tsv",
+            OUT_DIR / f"identity_plot{sfx}.svg",
         ],
         "desc":    "500 bp sliding-window blastn %identity vs reference",
         "slow":    True,
@@ -82,15 +83,15 @@ STEPS = [
         "key":     "regions",
         "name":    "high-identity regions",
         "script":  SCRIPTS / "high_identity_regions.py",
-        "outputs": lambda sfx: [BASE / f"high_identity_regions{sfx}.tsv"],
+        "outputs": lambda sfx: [OUT_DIR / f"high_identity_regions{sfx}.tsv"],
         "depends": "blastn",
-        "desc":    "merge windows into >90% conserved blocks",
+        "desc":    "merge windows into conserved blocks above threshold",
     },
     {
         "key":     "map",
         "name":    "comparison map + ribbons",
         "script":  SCRIPTS / "comparison_map.py",
-        "outputs": lambda sfx: [BASE / f"comparison_map{sfx}.svg"],
+        "outputs": lambda sfx: [OUT_DIR / f"comparison_map{sfx}.svg"],
         "depends": "regions",
         "desc":    "dual-axis ORF synteny map with light-blue curved ribbon overlay",
     },
@@ -98,7 +99,7 @@ STEPS = [
         "key":     "ribbon",
         "name":    "standalone ribbon plot",
         "script":  SCRIPTS / "ribbon_synteny_plot.py",
-        "outputs": lambda sfx: [BASE / f"ribbon_synteny{sfx}.svg"],
+        "outputs": lambda sfx: [OUT_DIR / f"ribbon_synteny{sfx}.svg"],
         "depends": "regions",
         "desc":    "clean light-blue curved-ribbon synteny diagram",
     },
@@ -170,6 +171,8 @@ Examples:
                      help="Reference island bands: 'auto' (from GFF), 'none', or path to a TSV file")
     out.add_argument("--islands-qry", type=str, default="auto",
                      help="Query island bands: 'auto' (from GFF), 'none', or path to a TSV file")
+    out.add_argument("--identity-threshold", type=float, default=90.0,
+                     help="%% identity threshold for conserved blocks  [default: 90.0]")
 
     # ── Step selection ───────────────────────────────────────────────────
     ctl = parser.add_argument_group("Step control")
@@ -298,9 +301,10 @@ Examples:
     child_env["SYNTENY_REF_GFF"]   = str(ref_gff)
     child_env["SYNTENY_QRY_FASTA"] = str(qry_fasta)
     child_env["SYNTENY_QRY_GFF"]   = str(qry_gff)
-    child_env["SYNTENY_SUFFIX"]        = suffix.lstrip("_") if suffix else ""
-    child_env["SYNTENY_ISLANDS_REF"]   = args.islands_ref
-    child_env["SYNTENY_ISLANDS_QRY"]   = args.islands_qry
+    child_env["SYNTENY_SUFFIX"]             = suffix.lstrip("_") if suffix else ""
+    child_env["SYNTENY_ISLANDS_REF"]        = args.islands_ref
+    child_env["SYNTENY_ISLANDS_QRY"]        = args.islands_qry
+    child_env["SYNTENY_IDENTITY_THRESHOLD"] = str(args.identity_threshold)
 
     # ── Execute ──────────────────────────────────────────────────────────
     total = len(actual_run)
@@ -319,7 +323,7 @@ Examples:
         t0 = time.time()
         result = subprocess.run(
             [PYTHON, str(step["script"])],
-            cwd=str(BASE),
+            cwd=str(OUT_DIR),
             env=child_env,
             capture_output=False,
             text=True,
@@ -346,7 +350,7 @@ Examples:
     print(f"  Result     : {n_ok}/{total} steps succeeded"
           + (f", {failures} failed" if failures else ""))
     if not failures:
-        print(f"\n  Output files (in {BASE}/):")
+        print(f"\n  Output files (in {OUT_DIR}/):")
         done_keys = {s["key"] for s in actual_run}
         for s in STEPS:
             if s["key"] in done_keys:

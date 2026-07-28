@@ -31,8 +31,8 @@ if _SUFFIX and not _SUFFIX.startswith("_"):
 
 
 def out_path(basename, ext=".tsv"):
-    """Return a path under BASE/ with the optional suffix inserted before ext."""
-    return BASE / f"{basename}{_SUFFIX}{ext}"
+    """Return a path in the current working directory with the optional suffix inserted before ext."""
+    return Path.cwd() / f"{basename}{_SUFFIX}{ext}"
 
 
 def base_name(basename, ext=".tsv"):
@@ -53,6 +53,9 @@ QRY_FASTA = Path(os.environ.get(
 QRY_GFF = Path(os.environ.get(
     "SYNTENY_QRY_GFF",
     str(BASE / "test_files/qry.gff3")))
+
+# ── Configurable parameters (overridable via environment variables) ──────────
+IDENTITY_THRESHOLD = float(os.environ.get("SYNTENY_IDENTITY_THRESHOLD", "90.0"))
 
 # ── Constants ───────────────────────────────────────────────────────────────
 REF_LEN = 191151

@@ -27,6 +27,7 @@ BASE    = _pp.BASE
 REF_GFF = _pp.REF_GFF
 QRY_GFF = _pp.QRY_GFF
 OUT_SVG = _pp.out_path("comparison_map", ".svg")
+ID_THR  = int(_pp.IDENTITY_THRESHOLD) if _pp.IDENTITY_THRESHOLD == int(_pp.IDENTITY_THRESHOLD) else _pp.IDENTITY_THRESHOLD
 
 # Genome lengths — derived from the shared pipeline constants.
 REF_LEN = _pp.REF_LEN
@@ -609,7 +610,7 @@ def main():
     summary_lines += [
         "",
         "Light-blue ribbons =",
-        "conserved >90% blocks",
+        f"conserved >{ID_THR}% blocks",
     ]
     summary = "\n".join(summary_lines)
 

@@ -25,6 +25,7 @@ OUT_SVG     = str(_pp.out_path("ribbon_synteny", ".svg"))
 
 REF_LEN = _pp.REF_LEN   # reference, original orientation
 QRY_LEN = _pp.QRY_LEN   # query, rep-oriented
+ID_THR  = int(_pp.IDENTITY_THRESHOLD) if _pp.IDENTITY_THRESHOLD == int(_pp.IDENTITY_THRESHOLD) else _pp.IDENTITY_THRESHOLD
 
 # Vertical layout of the two genome bars
 Y_TOP_C = 1.0      # centre of reference bar
@@ -129,7 +130,7 @@ def main():
 
     # colour bar removed — ribbons are uniformly light blue
     ax.set_title("Curved-ribbon synteny: reference  ↔  query\n"
-                 f"{len(regions)} conserved (>90%) blocks, total "
+                 f"{len(regions)} conserved (>{ID_THR}%) blocks, total "
                  f"{sum(int(r['query_end'])-int(r['query_start']) for r in regions):,} bp",
                  fontsize=14, fontweight="bold")
 

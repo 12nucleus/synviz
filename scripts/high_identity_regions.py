@@ -19,7 +19,7 @@ BASE    = _pp.BASE
 QRY_LEN = _pp.QRY_LEN
 TSV     = _pp.out_path("blastn_identity_windows", ".tsv")
 OUT     = _pp.out_path("high_identity_regions", ".tsv")
-THRESH  = 90.0
+THRESH  = _pp.IDENTITY_THRESHOLD
 
 rows = []
 with open(TSV) as f:
