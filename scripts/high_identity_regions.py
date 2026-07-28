@@ -20,6 +20,7 @@ QRY_LEN = _pp.QRY_LEN
 TSV     = _pp.out_path("blastn_identity_windows", ".tsv")
 OUT     = _pp.out_path("high_identity_regions", ".tsv")
 THRESH  = _pp.IDENTITY_THRESHOLD
+MIN_LEN = _pp.MIN_REGION_LENGTH
 
 rows = []
 with open(TSV) as f:
@@ -52,7 +53,9 @@ while i < n:
         rrs, rre = min(b['rrs'] for b in block), max(b['rre'] for b in block)
         mean_pid = sum(b['pident'] for b in block) / len(block)
         wraps = False  # ref coords are now directly rep-oriented (no orig↔rep conversion)
-        regions.append((q_start, q_end, ros, roe, rrs, rre, mean_pid, len(block), wraps))
+        region_len = q_end - q_start
+        if region_len >= MIN_LEN:
+            regions.append((q_start, q_end, ros, roe, rrs, rre, mean_pid, len(block), wraps))
         i = j + 1
     else:
         i += 1
@@ -63,7 +66,8 @@ with open(OUT, 'w') as f:
     for idx, (qs, qe, ros, roe, rrs, rre, mp, nw, w) in enumerate(regions, 1):
         f.write(f"{idx}\t{qs}\t{qe}\t{ros}\t{roe}\t{rrs}\t{rre}\t{mp:.2f}\t{nw}\t{int(w)}\n")
 
-print(f"Found {len(regions)} contiguous region(s) with per-window identity > {THRESH}%")
+print(f"Found {len(regions)} contiguous region(s) with per-window identity > {THRESH}%"
+      f" and length >= {MIN_LEN} bp")
 total_q = sum(r[1] - r[0] for r in regions)
 qry_total = QRY_LEN or 1
 print(f"Total query span covered: {total_q:,} bp "

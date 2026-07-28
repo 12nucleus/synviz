@@ -56,6 +56,7 @@ QRY_GFF = Path(os.environ.get(
 
 # ── Configurable parameters (overridable via environment variables) ──────────
 IDENTITY_THRESHOLD = float(os.environ.get("SYNTENY_IDENTITY_THRESHOLD", "90.0"))
+MIN_REGION_LENGTH  = int(os.environ.get("SYNTENY_MIN_REGION_LENGTH", "1000"))
 
 # ── Genome lengths (overridable via environment variables) ──────────────────
 def _read_fasta_length(path):
