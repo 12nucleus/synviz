@@ -312,7 +312,7 @@ def main():
 
     # ── Helper: draw one track (in its own coordinate space) ──
     def draw_track(ax, feats, islands, key_genes, title, track_len,
-                   label_islands=False, label_side="top"):
+                   label_islands=False, label_side="top", xmax=None):
         """Draw a linear genome track with ORFs, islands, and key genes.
         Coordinates are the track's own (ref for top, query for bottom),
         so every CDS is shown regardless of alignment coverage.
@@ -320,12 +320,18 @@ def main():
         When *label_islands* is True (islands from a user TSV), each island
         band is annotated with its text label, staggered across tiers.
         *label_side*="top" places labels ABOVE the track (positive y, arrow
-        down); *label_side*="bottom" places them BELOW (negative y, arrow up)."""
+        down); *label_side*="bottom" places them BELOW (negative y, arrow up).
+
+        If *xmax* is provided, both tracks share the same x-scale (proportional
+        to the longer genome). Otherwise the track uses its own length."""
         # Extend the track to make room for the label tiers on the side where
         # they live.
         top_lim    = 3.6 if (label_islands and label_side == "top")    else 1.6
         bottom_lim = -3.6 if (label_islands and label_side == "bottom") else -1.6
-        ax.set_xlim(-track_len * 0.015, track_len * 1.015)
+        if xmax is not None:
+            ax.set_xlim(-xmax * 0.015, xmax * 1.015)
+        else:
+            ax.set_xlim(-track_len * 0.015, track_len * 1.015)
         ax.set_ylim(bottom_lim, top_lim)
 
         N_TIERS   = 4          # number of staggered label tiers
@@ -439,6 +445,9 @@ def main():
     ref_islands, label_ref = _resolve_islands(ref_islands_mode, ref_feats, REF_LEN, "ref")
     qry_islands, label_qry = _resolve_islands(qry_islands_mode, qry_feats, QRY_LEN, "qry")
 
+    # ── Shared x-scale for both tracks (proportional to the longer genome) ──
+    XMAX = max(REF_LEN, QRY_LEN)
+
     # ── Draw tracks (each in its own coordinate space) ──
     # In-plot island labels are only drawn for sides whose islands came
     # from a user TSV file (auto / none modes keep the bands unlabelled).
@@ -447,22 +456,22 @@ def main():
     if have_ref_gff:
         draw_track(ax_top, ref_feats, ref_islands, [],
                    f"Reference  ({REF_LEN:,} bp)", REF_LEN,
-                   label_islands=label_ref, label_side="top")
+                   label_islands=label_ref, label_side="top", xmax=XMAX)
     else:
         draw_track(ax_top, [], ref_islands, [],
                    f"Reference  ({REF_LEN:,} bp)  [FASTA only — no annotations]", REF_LEN,
-                   label_islands=label_ref, label_side="top")
+                   label_islands=label_ref, label_side="top", xmax=XMAX)
         ax_top.text(REF_LEN / 2, 0, "No GFF annotations provided", ha='center', va='center',
                     fontsize=12, color='#999', style='italic', zorder=20)
 
     if have_qry_gff:
         draw_track(ax_bot, qry_feats, qry_islands, [],
                    f"Query  ({QRY_LEN:,} bp)", QRY_LEN,
-                   label_islands=label_qry, label_side="bottom")
+                   label_islands=label_qry, label_side="bottom", xmax=XMAX)
     else:
         draw_track(ax_bot, [], qry_islands, [],
                    f"Query  ({QRY_LEN:,} bp)  [FASTA only — no annotations]", QRY_LEN,
-                   label_islands=label_qry, label_side="bottom")
+                   label_islands=label_qry, label_side="bottom", xmax=XMAX)
         ax_bot.text(QRY_LEN / 2, 0, "No GFF annotations provided", ha='center', va='center',
                     fontsize=12, color='#999', style='italic', zorder=20)
 
@@ -532,7 +541,7 @@ def main():
                 n_rib += 1
         print(f"  ✓ Overlaid {n_rib} light-blue conserved-block ribbons")
 
-    # ── X-axis ticks (independent for each track) ──
+    # ── X-axis ticks (independent for each track, within shared x-scale) ──
     for ax, L, name in [(ax_top, REF_LEN, 'reference'),
                         (ax_bot, QRY_LEN, 'query')]:
         ticks = np.arange(0, L + 1, 10000)
@@ -544,6 +553,8 @@ def main():
         ax.tick_params(axis='x', colors='#666', length=3, pad=2)
         ax.set_xlabel(f"Genome position ({name} coordinates)", fontsize=9,
                       color='#555', labelpad=8)
+    # Both axes already share the same x-limit (set via xmax in draw_track),
+    # so the shorter genome's bar simply ends earlier within the common scale.
 
     # ── Right-hand panel: legend (top) + summary box (bottom) ──
     # Two stacked axes in a single right-hand column. The legend's height
