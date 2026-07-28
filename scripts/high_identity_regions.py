@@ -19,8 +19,9 @@ BASE    = _pp.BASE
 QRY_LEN = _pp.QRY_LEN
 TSV     = _pp.out_path("blastn_identity_windows", ".tsv")
 OUT     = _pp.out_path("high_identity_regions", ".tsv")
-THRESH  = _pp.IDENTITY_THRESHOLD
-MIN_LEN = _pp.MIN_REGION_LENGTH
+THRESH    = _pp.IDENTITY_THRESHOLD
+MIN_LEN   = _pp.MIN_REGION_LENGTH
+MAX_GAP   = _pp.MAX_REF_GAP
 
 rows = []
 with open(TSV) as f:
@@ -39,13 +40,21 @@ with open(TSV) as f:
 # A window qualifies if it has a hit and identity > THRESH
 qual = [ (r['hit'] == 1 and r['pident'] > THRESH) for r in rows ]
 
-# Merge consecutive qualifying windows into contiguous regions
+def _ref_gap(prev, curr):
+    """Gap (bp) between two ref intervals [start, end].  0 if they overlap."""
+    a, b = min(prev['rrs'], prev['rre']), max(prev['rrs'], prev['rre'])
+    c, d = min(curr['rrs'], curr['rre']), max(curr['rrs'], curr['rre'])
+    return max(0, max(a, c) - min(b, d))
+
+
+# Merge consecutive qualifying windows into contiguous regions,
+# splitting when the reference jump exceeds MAX_GAP.
 regions = []
 i, n = 0, len(rows)
 while i < n:
     if qual[i]:
         j = i
-        while j + 1 < n and qual[j + 1]:
+        while j + 1 < n and qual[j + 1] and _ref_gap(rows[j], rows[j + 1]) <= MAX_GAP:
             j += 1
         block = rows[i:j + 1]
         q_start, q_end = block[0]['qstart'], block[-1]['qend']

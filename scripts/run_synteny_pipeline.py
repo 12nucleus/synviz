@@ -185,6 +185,8 @@ Examples:
                      help="%% identity threshold for conserved blocks  [default: 90.0]")
     out.add_argument("--min-region-length", type=int, default=1000,
                      help="Minimum conserved block length (bp) to draw a ribbon  [default: 1000]")
+    out.add_argument("--max-ref-gap", type=int, default=2000,
+                     help="Maximum gap (bp) between reference coordinates for windows to stay merged; larger gaps split the region  [default: 2000]")
 
     # ── Step selection ───────────────────────────────────────────────────
     ctl = parser.add_argument_group("Step control")
@@ -318,6 +320,7 @@ Examples:
     child_env["SYNTENY_ISLANDS_QRY"]        = args.islands_qry
     child_env["SYNTENY_IDENTITY_THRESHOLD"] = str(args.identity_threshold)
     child_env["SYNTENY_MIN_REGION_LENGTH"]  = str(args.min_region_length)
+    child_env["SYNTENY_MAX_REF_GAP"]        = str(args.max_ref_gap)
     child_env["SYNTENY_REF_LEN"] = str(_read_fasta_length(ref_fasta))
     child_env["SYNTENY_QRY_LEN"] = str(_read_fasta_length(qry_fasta))
 
