@@ -107,6 +107,16 @@ STEPS = [
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
+def _read_fasta_length(path):
+    """Return total length (bp) of a FASTA file without loading entire sequence."""
+    total = 0
+    with open(path) as f:
+        for line in f:
+            if not line.startswith(">"):
+                total += len(line.strip())
+    return total
+
+
 def _hr(title="", char="=", width=68):
     if title:
         print(f"\n{char * 4}  {title}  {char * max(0, width - len(title) - 6)}")
@@ -305,6 +315,8 @@ Examples:
     child_env["SYNTENY_ISLANDS_REF"]        = args.islands_ref
     child_env["SYNTENY_ISLANDS_QRY"]        = args.islands_qry
     child_env["SYNTENY_IDENTITY_THRESHOLD"] = str(args.identity_threshold)
+    child_env["SYNTENY_REF_LEN"] = str(_read_fasta_length(ref_fasta))
+    child_env["SYNTENY_QRY_LEN"] = str(_read_fasta_length(qry_fasta))
 
     # ── Execute ──────────────────────────────────────────────────────────
     total = len(actual_run)

@@ -57,7 +57,15 @@ QRY_GFF = Path(os.environ.get(
 # ── Configurable parameters (overridable via environment variables) ──────────
 IDENTITY_THRESHOLD = float(os.environ.get("SYNTENY_IDENTITY_THRESHOLD", "90.0"))
 
-# ── Constants ───────────────────────────────────────────────────────────────
-REF_LEN = 191151
-QRY_LEN = 193713
-REF_CUT = 177304   # 1-based rep-protein start for original → rep-oriented rotation
+# ── Genome lengths (overridable via environment variables) ──────────────────
+def _read_fasta_length(path):
+    """Return the total length (bp) of a (multi-line) FASTA file."""
+    total = 0
+    with open(path) as f:
+        for line in f:
+            if not line.startswith(">"):
+                total += len(line.strip())
+    return total
+
+REF_LEN = int(os.environ.get("SYNTENY_REF_LEN", "0")) or _read_fasta_length(REF_FASTA)
+QRY_LEN = int(os.environ.get("SYNTENY_QRY_LEN", "0")) or _read_fasta_length(QRY_FASTA)
