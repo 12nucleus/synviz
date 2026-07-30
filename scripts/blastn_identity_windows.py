@@ -13,10 +13,11 @@ Outputs:
   - identity_plot.svg             (% identity vs query position, continuous)
 
 Usage:
-    conda run -n TB_plasmid python3 scripts/blastn_identity_windows.py
+    python3 scripts/blastn_identity_windows.py
 """
 
 import subprocess, tempfile, os, shutil, sys
+from shutil import which
 from pathlib import Path
 import numpy as np
 import matplotlib
@@ -30,9 +31,8 @@ REF_FASTA = _pp.REF_FASTA
 QRY_FASTA = _pp.QRY_FASTA
 OUT_TSV   = _pp.out_path("blastn_identity_windows", ".tsv")
 OUT_SVG   = _pp.out_path("identity_plot", ".svg")
-
-BLASTN      = "/Users/Pascal/anaconda3/envs/TB/bin/blastn"
-MAKEBLASTDB = "/Users/Pascal/anaconda3/envs/TB/bin/makeblastdb"
+BLASTN    = _pp.BLASTN
+MAKEBLASTDB = _pp.MAKEBLASTDB
 
 WINDOW = 500
 STEP   = 250
@@ -59,8 +59,8 @@ def main():
     print("blastn per-window % identity (500 bp window, 250 bp step)")
     print("=" * 64)
 
-    if not os.path.exists(BLASTN) or not os.path.exists(MAKEBLASTDB):
-        print("ERROR: blastn / makeblastdb not found at expected path")
+    if not shutil.which(BLASTN) or not shutil.which(MAKEBLASTDB):
+        print("ERROR: blastn / makeblastdb not found on PATH")
         sys.exit(1)
 
     print("[1/5] Reading sequences...")

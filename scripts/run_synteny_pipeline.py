@@ -19,38 +19,40 @@ previous plots are preserved:
   comparison_map_cmp1.svg              ribbon_synteny_cmp1.svg
 
 Usage:
-  # Default run
-  conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py
+  python3 scripts/run_synteny_pipeline.py
 
   # With a named comparison (preserves previous outputs)
-  conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py --suffix cmp1
+  python3 scripts/run_synteny_pipeline.py --suffix cmp1
 
   # Custom input files
-  conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py \\
+  python3 scripts/run_synteny_pipeline.py \\
       --ref-fasta path/to/ref.fasta --ref-gff path/to/ref.gff3 \\
       --qry-fasta path/to/qry.fasta --qry-gff path/to/qry.gff3 \\
       --suffix comparison_A
 
   # Skip slow blastn step (re-use existing windows)
-  conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py --skip blastn
+  python3 scripts/run_synteny_pipeline.py --skip blastn
 
   # Only regenerate the comparison map
-  conda run -n TB_plasmid python3 scripts/run_synteny_pipeline.py --only map
+  python3 scripts/run_synteny_pipeline.py --only map
 
 Requirements:
-  - Conda environment 'TB_plasmid' (matplotlib, numpy)
-  - blastn 2.16+ at  /Users/Pascal/anaconda3/envs/TB/bin/
+  - Python 3.8+ with matplotlib, numpy
+  - blastn + makeblastdb (must be available on PATH)
 =============================================================================
 """
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-# ── Defaults (used when CLI args are not provided) ──────────────────────────
+# ── Shared pipeline paths & BLAST executables ──────────────────────────────
+import _pipeline_paths as _pp
+
 BASE    = Path(__file__).resolve().parent.parent
 SCRIPTS = Path(__file__).resolve().parent
 OUT_DIR = Path.cwd()
@@ -60,10 +62,9 @@ DEFAULT_REF_GFF   = BASE / "test_files/ref.gff3"
 DEFAULT_QRY_FASTA = BASE / "test_files/qry.fasta"
 DEFAULT_QRY_GFF   = BASE / "test_files/qry.gff3"
 
-BLASTN      = "/Users/Pascal/anaconda3/envs/TB/bin/blastn"
-MAKEBLASTDB = "/Users/Pascal/anaconda3/envs/TB/bin/makeblastdb"
+BLASTN      = _pp.BLASTN
+MAKEBLASTDB = _pp.MAKEBLASTDB
 PYTHON      = sys.executable
-CONDA_ENV   = "TB_plasmid"
 
 # ── Step definitions ────────────────────────────────────────────────────────
 
@@ -294,16 +295,11 @@ Examples:
             tag = "—"
         print(f"  {tag}  {label:15s}  {p}")
     for label, p in [("blastn", BLASTN), ("makeblastdb", MAKEBLASTDB)]:
-        exists = os.path.isfile(p) and os.access(p, os.X_OK)
-        tag = "✓" if exists else "✗ NOT FOUND"
-        print(f"  {tag}  {label:15s}  {p}")
-        if not exists:
+        resolved = shutil.which(p)
+        tag = "✓" if resolved else "✗ NOT FOUND"
+        print(f"  {tag}  {label:15s}  {resolved or p}")
+        if not resolved:
             ok = False
-    env = os.environ.get("CONDA_DEFAULT_ENV", "")
-    if env != CONDA_ENV:
-        print(f"  ⚠  Conda env '{CONDA_ENV}' not active (current: '{env or 'none'}')."
-              f"  Run: conda activate {CONDA_ENV}")
-
     if not ok:
         print("\n  Cannot proceed — missing prerequisites.\n")
         sys.exit(1)

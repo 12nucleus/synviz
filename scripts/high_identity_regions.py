@@ -8,7 +8,7 @@ and report each region's start-end in BOTH genomes:
 Reads blastn_identity_windows.tsv and writes high_identity_regions.tsv.
 
 Usage:
-    conda run -n TB_plasmid python3 scripts/high_identity_regions.py
+    python3 scripts/high_identity_regions.py
 """
 
 import csv

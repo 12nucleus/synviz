@@ -19,6 +19,7 @@ When SYNTENY_SUFFIX is set (e.g. "cmp1"), outputs are named:
 """
 
 import os
+import shutil
 from pathlib import Path
 
 # ── Project root ────────────────────────────────────────────────────────────
@@ -53,6 +54,13 @@ QRY_FASTA = Path(os.environ.get(
 QRY_GFF = Path(os.environ.get(
     "SYNTENY_QRY_GFF",
     str(BASE / "test_files/qry.gff3")))
+
+# ── BLAST executables (resolved from PATH) ────────────────────────────────────
+# Use shutil.which() for resolution; if not found, fall back to bare command
+# name so the subprocess runtime PATH (e.g. active conda env) is still used.
+BLASTN      = shutil.which("blastn")      or "blastn"
+MAKEBLASTDB = shutil.which("makeblastdb") or "makeblastdb"
+
 
 # ── Configurable parameters (overridable via environment variables) ──────────
 IDENTITY_THRESHOLD = float(os.environ.get("SYNTENY_IDENTITY_THRESHOLD", "90.0"))

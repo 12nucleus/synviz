@@ -7,7 +7,7 @@ Genomic islands shown as coloured bands. Key genes highlighted.
 A shaded connector links the 1:1 aligned blocks across the two axes.
 
 Usage:
-    conda run -n TB_plasmid python3 scripts/comparison_map.py
+    python3 scripts/comparison_map.py
 """
 
 import os
